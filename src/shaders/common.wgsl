@@ -1,34 +1,48 @@
-// CHECKITOUT: code that you add here will be prepended to all shaders
+// Common WGSL definitions shared by multiple shaders (structures, constants).
+
+// Constant for light radius (in world units), injected via host constants.
+const lightRadius: f32 = ${lightRadius};
+
+// Struct definitions for uniforms and buffers:
+struct CameraUniforms {
+    viewProj: mat4x4<f32>;
+    // (If camera had additional data like pos, it could be added here.)
+};
+
+struct ClusteringUniforms {
+    viewMat: mat4x4<f32>;
+    projMat: mat4x4<f32>;
+    invProjMat: mat4x4<f32>;
+    screenWidth: f32;
+    screenHeight: f32;
+    near: f32;
+    far: f32;
+    clustersX: u32;
+    clustersY: u32;
+    clustersZ: u32;
+    maxLightsPerCluster: u32;
+};
 
 struct Light {
-    pos: vec3f,
-    color: vec3f
-}
+    position: vec3<f32>;
+    _pad0: f32;
+    color: vec3<f32>;
+    _pad1: f32;
+};
 
-struct LightSet {
-    numLights: u32,
-    lights: array<Light>
-}
+struct Lights {
+    numLights: u32;
+    _padding: vec3<u32>;
+    lights: array<Light>;
+};
 
-// TODO-2: you may want to create a ClusterSet struct similar to LightSet
+// Storage buffer for cluster counts (runtime array of u32)
+struct ClusterCounts {
+    data: array<u32>;
+};
+// Storage buffer for cluster indices (runtime array of u32)
+struct ClusterIndices {
+    data: array<u32>;
+};
 
-struct CameraUniforms {
-    // TODO-1.3: add an entry for the view proj mat (of type mat4x4f)
-    viewProjMat: mat4x4f,
-    canvasWidth: f32,
-    canvasHeight: f32,
-    aspectRatio: f32
-}
-
-// CHECKITOUT: this special attenuation function ensures lights don't affect geometry outside the maximum light radius
-fn rangeAttenuation(distance: f32) -> f32 {
-    return clamp(1.f - pow(distance / ${lightRadius}, 4.f), 0.f, 1.f) / (distance * distance);
-}
-
-fn calculateLightContrib(light: Light, posWorld: vec3f, nor: vec3f) -> vec3f {
-    let vecToLight = light.pos - posWorld;
-    let distToLight = length(vecToLight);
-
-    let lambert = max(dot(nor, normalize(vecToLight)), 0.f);
-    return light.color * lambert * rangeAttenuation(distToLight);
-}
+// (Material uniform structures, samplers, etc., would be declared in specific shaders as needed.)
